@@ -8,6 +8,8 @@ namespace Domain.Entities
         public string Name { get; set; }
         public string Description { get; set; }
         public GroupType Type { get; set; }
+        public int CoachId { get; set; }
         public Member Coach { get; set; }
+        public ISet<Training> GroupTrainings { get; set; }
     }
 }

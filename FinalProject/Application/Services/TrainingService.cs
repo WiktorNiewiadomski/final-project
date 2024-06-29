@@ -1,54 +1,93 @@
-﻿using Application.Interfaces.Repositories;
+﻿using Application.Exceptions;
+using Application.Interfaces;
 using Application.Interfaces.Services;
 using Application.Models.Training;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Services
 {
     public class TrainingService : ITrainingService
     {
-        private readonly ITrainingRepository _trainingRepository;
-        private readonly IGroupRepository _groupRepository;
+        private readonly IApplicationDbContext _applicationDbContext;
+        private readonly IGroupService _groupService;
+        private readonly IMemberService _memberService;
 
-        public TrainingService(ITrainingRepository trainingRepository, IGroupRepository groupRepository)
+        public TrainingService(IApplicationDbContext applicationDbContext, IGroupService groupService, IMemberService memberService)
         {
-            _trainingRepository = trainingRepository;
-            _groupRepository = groupRepository;
+            _applicationDbContext = applicationDbContext;
+            _groupService = groupService;
+            _memberService = memberService;
         }
         public Training Create(CreateTrainingDto dto)
         {
-            Group group = _groupRepository.GetById(dto.GroupId);
-            List<Group> coachGroups = _groupRepository.GetCoachGroups(group.Coach.Id);
-            foreach (Group coachGroup in coachGroups)
+            var group = _groupService.GetById(dto.GroupId);
+            var coach = _memberService.GetById(group.CoachId);
+            foreach (var coachGroup in coach.CoachGroups)
             {
-                List<Training> inTimeBracketTrainings = _trainingRepository.GetTrainingsInTimeBracketForGroupId(coachGroup.Id, dto.TrainingStart, dto.TrainingEnd);
+                var inTimeBracketTrainings = _applicationDbContext.Trainings
+                    .Where(t => dto.TrainingStart < t.TrainingEnd && dto.TrainingEnd > t.TrainingStart)
+                    .ToList();
                 if (inTimeBracketTrainings.Count > 0)
                 {
-                    throw new HttpRequestException("Coach of this group has other training in that time");
+                    throw new BadRequestException("Coach of this group has other training in that time");
                 }
             }
+
+            var newTraining = new Training();
+            newTraining.GroupId = dto.GroupId;
+            newTraining.TrainingStart = dto.TrainingStart;
+            newTraining.TrainingEnd = dto.TrainingEnd;
+            newTraining.PreNotes = dto.PreNotes;
+            newTraining.PostNotes = dto.PostNotes;
             
-            return _trainingRepository.Create(dto);
+            var e = _applicationDbContext.Trainings.Add(newTraining);
+            _applicationDbContext.SaveChanges();
+            return e.Entity;
         }
 
         public void DeleteById(int id)
         {
-            _trainingRepository.DeleteById(id);
+            var deleted = _applicationDbContext.Trainings.Find(id);
+            if (deleted != null)
+            {
+                _applicationDbContext.Trainings.Remove(deleted);
+                _applicationDbContext.SaveChanges();
+            }
         }
 
         public Training GetById(int id)
         {
-            return _trainingRepository.GetById(id);
+            var found = _applicationDbContext.Trainings
+                .Include(g => g.Group)
+                .First(g => g.Id == id);
+            if (found == null)
+            {
+                throw new NotFoundException("Group not found");
+            }
+
+            return found;
         }
 
-        public List<Training> List()
+        public List<Training> GetAll()
         {
-            return _trainingRepository.List();
+            return _applicationDbContext.Trainings
+                .Include(g => g.Group)
+                .ToList();
         }
 
-        public Training Update(UpdateTrainingDto dto)
+        public Training Update(int id, UpdateTrainingDto dto)
         {
-            return _trainingRepository.Update(dto);
+            var updated = GetById(id);
+            updated.TrainingStart = (DateTime)(dto.TrainingStart != null ? dto.TrainingStart : updated.TrainingStart);
+            updated.TrainingEnd = (DateTime)(dto.TrainingEnd != null ? dto.TrainingEnd : updated.TrainingEnd);
+            updated.PreNotes = dto.PreNotes != null ? dto.PreNotes : updated.PreNotes;
+            updated.PostNotes = dto.PostNotes != null ? dto.PostNotes : updated.PostNotes;
+            // TODO: check for overlaping trainings
+            updated.GroupId = (int)(dto.GroupId != null ? dto.GroupId : updated.GroupId);
+            var e = _applicationDbContext.Trainings.Update(updated);
+            _applicationDbContext.SaveChanges();
+            return e.Entity;
         }
     }
 }

@@ -5,9 +5,6 @@ namespace Application.Models.Training
 {
     public class UpdateTrainingDto
     {
-        [MaxLength(40)]
-        [MinLength(4)]
-        public string? Name { get; set; }
         public int? GroupId { get; set; }
         [DataType(DataType.DateTime)]
         public DateTime? TrainingStart { get; set; }

@@ -8,5 +8,7 @@ namespace Application.Interfaces
         DbSet<Member> Members { get; }
         DbSet<Group> Groups { get; }
         DbSet<Training> Trainings { get; }
+
+        int SaveChanges();
     }
 }

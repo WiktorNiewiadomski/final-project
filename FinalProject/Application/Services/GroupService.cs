@@ -1,42 +1,77 @@
-﻿using Application.Interfaces.Repositories;
+﻿using Application.Exceptions;
+using Application.Interfaces;
 using Application.Interfaces.Services;
 using Application.Models.Group;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Application.Services
 {
     public class GroupService : IGroupService
     {
-        private readonly IGroupRepository _groupRepository;
+        private readonly IApplicationDbContext _applicationDbContext;
 
-        public GroupService(IGroupRepository groupRepository)
+        public GroupService(IApplicationDbContext applicationDbContext)
         {
-            _groupRepository = groupRepository;
+            _applicationDbContext = applicationDbContext;
         }
 
         public Group Create(CreateGroupDto dto)
         {
-            return _groupRepository.Create(dto);
+            Group newGroup = new Group();
+            newGroup.Name = dto.Name;
+            newGroup.Description = dto.Description;
+            newGroup.Type = dto.Type;
+            newGroup.CoachId = dto.CoachId;
+            var e = _applicationDbContext.Groups.Add(newGroup);
+            _applicationDbContext.SaveChanges();
+            return e.Entity;
         }
 
         public void DeleteById(int id)
         {
-            _groupRepository.DeleteById(id);
+            var deleted = _applicationDbContext.Groups.Find(id);
+            if (deleted != null)
+            {
+                _applicationDbContext.Groups.Remove(deleted);
+                _applicationDbContext.SaveChanges();
+            }
         }
 
         public Group GetById(int id)
         {
-            return _groupRepository.GetById(id);
+            var found = _applicationDbContext.Groups
+                .Include(g => g.Coach)
+                .Include(g => g.GroupTrainings)
+                .First(g => g.Id == id);
+            if (found == null)
+            {
+                throw new NotFoundException("Group not found");
+            }
+
+            return found;
         }
 
-        public List<Group> List()
+        public List<Group> GetAll()
         {
-            return _groupRepository.List();
+            return _applicationDbContext.Groups
+                .Include(g => g.Coach)
+                .Include(g => g.GroupTrainings)
+                .ToList();
         }
 
-        public Group Update(UpdateGroupDto dto)
+        public Group Update(int id, UpdateGroupDto dto)
         {
-            return _groupRepository.Update(dto);
+            var updated = GetById(id);
+            updated.Name = dto.Name != null ? dto.Name : updated.Name;
+            updated.Description = dto.Description != null ? dto.Description : updated.Description;
+            updated.Type = (Domain.Enums.GroupType)(dto.Type != null ? dto.Type : updated.Type);
+            // TODO: add some check if trainings of group new coach are not overlaping
+            updated.CoachId = (int)(dto.CoachId != null ? dto.CoachId : updated.CoachId);
+            var e = _applicationDbContext.Groups.Update(updated);
+            _applicationDbContext.SaveChanges();
+            return e.Entity;
         }
     }
 }

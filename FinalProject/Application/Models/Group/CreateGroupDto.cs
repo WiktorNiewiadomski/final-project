@@ -15,6 +15,7 @@ namespace Application.Models.Group
         [Required]
         [EnumDataType(typeof(GroupType))]
         public GroupType Type { get; set; }
-        public int? CoachId { get; set; }
+        [Required]
+        public int CoachId { get; set; }
     }
 }

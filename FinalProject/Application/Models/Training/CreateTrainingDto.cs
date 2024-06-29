@@ -6,10 +6,6 @@ namespace Application.Models.Training
     public class CreateTrainingDto
     {
         [Required]
-        [MaxLength(40)]
-        [MinLength(4)]
-        public string Name { get; set; }
-        [Required]
         public int GroupId { get; set; }
         [Required]
         [DataType(DataType.DateTime)]
