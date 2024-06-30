@@ -12,12 +12,18 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />
+    <PackageReference Include="MediatR" Version="12.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="Mappers\" />
+    <None Remove="Attributes\" />
+    <None Remove="Attributes\TypeAuthorize\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Mappers\" />
+    <Folder Include="Attributes\" />
+    <Folder Include="Attributes\TypeAuthorize\" />
   </ItemGroup>
 </Project>

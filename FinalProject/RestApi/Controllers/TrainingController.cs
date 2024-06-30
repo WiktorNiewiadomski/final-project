@@ -1,14 +1,18 @@
-﻿using Application.Interfaces.Services;
+﻿using Application.Attributes.TypeAuthorize;
+using Application.Interfaces.Services;
 using Application.Mappers;
 using Application.Models.Group;
 using Application.Models.Training;
 using Domain.Entities;
+using Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace RestApi.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class TrainingController : ControllerBase
 	{
         private ITrainingService _trainingService;
@@ -19,7 +23,8 @@ namespace RestApi.Controllers
         }
 
         [HttpPost]
-        public TrainingDto CreateMember(
+        [TypeAuthorize(new[] { MemberType.Owner, MemberType.Coach })]
+        public TrainingDto CreateTraining(
             [FromBody] CreateTrainingDto dto
             )
         {
@@ -28,7 +33,8 @@ namespace RestApi.Controllers
 
         [HttpPatch]
         [Route("{id}")]
-        public TrainingDto UpdateMember(
+        [TypeAuthorize(new[] { MemberType.Owner, MemberType.Coach })]
+        public TrainingDto UpdateTraining(
             int id,
             [FromBody] UpdateTrainingDto dto
             )
@@ -38,21 +44,22 @@ namespace RestApi.Controllers
 
         [HttpDelete]
         [Route("{id}")]
-        public ActionResult DeleteMember(int id)
+        [TypeAuthorize(new[] { MemberType.Owner, MemberType.Coach })]
+        public ActionResult DeleteTraining(int id)
         {
             _trainingService.DeleteById(id);
             return Ok();
         }
 
         [HttpGet]
-        public List<TrainingDto> GetAllMembers()
+        public List<TrainingDto> GetAllTrainings()
         {
             return _trainingService.GetAll().Select(TrainingMapper.FromEntity).ToList();
         }
 
         [HttpGet]
         [Route("{id}")]
-        public TrainingDto GetMember(int id)
+        public TrainingDto GetTraining(int id)
         {
             return TrainingMapper.FromEntity(_trainingService.GetById(id));
         }

@@ -1,19 +1,27 @@
-﻿using Application.Exceptions;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Application.Exceptions;
 using Application.Interfaces;
 using Application.Interfaces.Services;
 using Application.Models.Member;
 using Domain.Entities;
+using Domain.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Application.Services
 {
     public class MemberService : IMemberService
     {
         private readonly IApplicationDbContext _applicationDbContext;
+        private readonly IOptions<JwtConfig> _config;
 
-        public MemberService(IApplicationDbContext applicationDbContext)
+        public MemberService(IApplicationDbContext applicationDbContext, IOptions<JwtConfig> config)
         {
             _applicationDbContext = applicationDbContext;
+            _config = config;
         }
 
         public Member Create(CreateMemberDto dto)
@@ -72,6 +80,32 @@ namespace Application.Services
             var e = _applicationDbContext.Members.Update(updated);
             _applicationDbContext.SaveChanges();
             return e.Entity;
+        }
+
+        public string Login(LoginMemberDto dto)
+        {
+            var foundMember = _applicationDbContext.Members.Where(m => m.Name == dto.Name && m.Password == dto.Password).First();
+            var issuer = _config.Value.Issuer;
+            var audience = _config.Value.Audience;
+            var key = Encoding.ASCII.GetBytes(_config.Value.Key);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                 new Claim("id", foundMember.Id.ToString()),
+                 new Claim("name", foundMember.Name),
+                 new Claim("type", foundMember.Type.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(5),
+                Issuer = issuer,
+                Audience = audience,
+                SigningCredentials = new SigningCredentials
+                (new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
+            };
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwtToken = tokenHandler.WriteToken(token);
+            return tokenHandler.WriteToken(token);
         }
     }
 }
