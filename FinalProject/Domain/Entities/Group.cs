@@ -11,5 +11,6 @@ namespace Domain.Entities
         public int CoachId { get; set; }
         public Member Coach { get; set; }
         public ISet<Training> GroupTrainings { get; set; }
+        public ISet<Member> GroupPlayers { get; set; }
     }
 }
