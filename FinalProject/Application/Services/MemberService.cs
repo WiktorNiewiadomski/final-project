@@ -41,9 +41,9 @@ namespace Application.Services
         public Member GetById(int id)
         {
             var found = _applicationDbContext.Members
-                .Include(g => g.TrainingGroup)
-                .Include(g => g.CoachGroups)
-                .First(g => g.Id == id);
+                .Include(m => m.TrainingGroup)
+                .Include(m => m.CoachGroups)
+                .First(m => m.Id == id);
             if (found == null)
             {
                 throw new NotFoundException("Member not found");
@@ -55,8 +55,8 @@ namespace Application.Services
         public List<Member> GetAll()
         {
             return _applicationDbContext.Members
-                .Include(g => g.TrainingGroup)
-                .Include(g => g.CoachGroups)
+                .Include(m => m.TrainingGroup)
+                .Include(m => m.CoachGroups)
                 .ToList();
         }
 

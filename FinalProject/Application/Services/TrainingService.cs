@@ -59,8 +59,9 @@ namespace Application.Services
         public Training GetById(int id)
         {
             var found = _applicationDbContext.Trainings
-                .Include(g => g.Group)
-                .First(g => g.Id == id);
+                .Include(t => t.Group)
+                .Include(t => t.Group.Coach)
+                .First(t => t.Id == id);
             if (found == null)
             {
                 throw new NotFoundException("Group not found");
@@ -72,7 +73,8 @@ namespace Application.Services
         public List<Training> GetAll()
         {
             return _applicationDbContext.Trainings
-                .Include(g => g.Group)
+                .Include(t => t.Group)
+                .Include(t => t.Group.Coach)
                 .ToList();
         }
 
