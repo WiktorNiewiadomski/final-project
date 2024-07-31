@@ -61,7 +61,7 @@ namespace Application.Services
             var found = _applicationDbContext.Trainings
                 .Include(t => t.Group)
                 .Include(t => t.Group.Coach)
-                .First(t => t.Id == id);
+                .FirstOrDefault(t => t.Id == id);
             if (found == null)
             {
                 throw new NotFoundException("Group not found");

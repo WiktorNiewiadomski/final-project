@@ -4,7 +4,6 @@ using Application.Interfaces.Services;
 using Application.Models.Group;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 
 namespace Application.Services
 {
@@ -44,7 +43,7 @@ namespace Application.Services
             var found = _applicationDbContext.Groups
                 .Include(g => g.Coach)
                 .Include(g => g.GroupTrainings)
-                .First(g => g.Id == id);
+                .FirstOrDefault(g => g.Id == id);
             if (found == null)
             {
                 throw new NotFoundException("Group not found");
